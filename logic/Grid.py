@@ -47,20 +47,21 @@ class Grid:
     def show_square(self, square):
         if square.has_mine():
             self.show_all_grid()
-            return False
+            return False, []
         else:
-            self.discover_squares(square)
-            return True
+            discovered = self.discover_squares(square)
+            return True, discovered
 
     def discover_squares(self, square):
         queue = [square]
         deja_vu = set()
         while queue:
             self.discover_square(queue, deja_vu)
+        return list(deja_vu)
 
     def discover_square(self, queue, deja_vu):
         square = queue.pop(0)
-        if square not in deja_vu:
+        if square not in deja_vu or not square.is_discovered():
             deja_vu.add(square)
             self.shown_grid[square.coords[0]][square.coords[1]] = square.mined_neighbors
             self.mine_grid[square.coords[0]][square.coords[1]].discover()

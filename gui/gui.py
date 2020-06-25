@@ -48,6 +48,7 @@ class BarBarGUI(Tk):
         self.lvl = (8, 10)
         self.active_page = self.start_page
         self.grid = Grid()
+        self.frame_dict = dict()
         self.color, self.font_color, self.label_mode = self.load_color()
         super().__init__()
         self.var = StringVar()
@@ -144,6 +145,7 @@ class BarBarGUI(Tk):
         self.grid = Grid()
         size = self.lvl[0]
         mines = self.lvl[1]
+        self.frame_dict = dict()
         self.grid.init_size(size, mines)
         for row in range(size):
             for col in range(size):
@@ -158,63 +160,35 @@ class BarBarGUI(Tk):
                 gs.grid(row=row, column=col)
                 self.grid_rowconfigure(row, minsize=int(600 / size), weight=1)
                 self.grid_columnconfigure(col, minsize=int(600 / size), weight=1)
+                self.frame_dict[(row, col)] = gs
 
     def activate_square(self, row, col):
         square = self.grid.mine_grid[row][col]
-        result = self.grid.show_square(square)
-        self.refresh_pane()
-        self.add_menubar()
+        result, discovered = self.grid.show_square(square)
         size = self.lvl[0]
         if result:
-            for r in range(size):
-                for c in range(size):
-                    if self.grid.mine_grid[r][c].is_discovered():
-                        gs = self.set_discovered_square(c, r, size)
-                    else:
-                        gs = self.set_square(r, c, size)
-                    gs.grid(row=r, column=c)
-                    self.grid_rowconfigure(r, minsize=int(600 / size), weight=1)
-                    self.grid_columnconfigure(c, minsize=int(600 / size), weight=1)
+            for s in discovered:
+                r = s.coords[0]
+                c = s.coords[1]
+                self.set_discovered_square(c, r, size)
             if self.grid.end_game():
                 self.game_over("VICTORY: You pacified the place !")
         else:
             for r in range(size):
                 for c in range(size):
-                    gs = self.set_discovered_square(c, r, size)
-                    gs.grid(row=r, column=c)
-                    self.grid_rowconfigure(r, minsize=int(600 / size), weight=1)
-                    self.grid_columnconfigure(c, minsize=int(600 / size), weight=1)
+                    self.set_discovered_square(c, r, size)
             self.game_over("GAME OVER: You hit a bomb !")
 
-    def set_square(self, r, c, size):
-        gs = GUISquare(self, self.color,
-                       bg=self.color,
-                       bd=3,
-                       relief=GROOVE,
-                       width=int(600 / size),
-                       height=int(600 / size),
-                       )
-        gs.bind("<Button-1>", lambda event, a=r, b=c: self.activate_square(a, b))
-
-        return gs
-
     def set_discovered_square(self, c, r, size):
-        gs = GUISquare(self, self.color,
-                       bg=self.color,
-                       bd=3,
-                       relief=GROOVE,
-                       width=int(600 / size),
-                       height=int(600 / size),
-                       )
         if self.grid.mine_grid[r][c].has_mine():
             load = Image.open("resources/mine.png")
         else:
             load = Image.open("resources/" + str(self.grid.mine_grid[r][c].mined_neighbors) + ".png")
         image = load.resize((int(600 / size), int(600 / size)), Image.ANTIALIAS)
         img = ImageTk.PhotoImage(image)
-        gs.create_image(0, 0, image=img, anchor=NW)
-        gs.image = img
-        return gs
+        self.frame_dict[(r, c)].create_image(0, 0, image=img, anchor=NW)
+        self.frame_dict[(r, c)].image = img
+        self.frame_dict[(r, c)].unbind("<Button-1>")
 
     def start_page(self):
         self.refresh_pane()
