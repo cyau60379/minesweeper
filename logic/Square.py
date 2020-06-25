@@ -16,6 +16,12 @@ class Square:
     def has_mine(self):
         return self.status == "mine"
 
+    def is_discovered(self):
+        return self.status == "discover"
+
+    def discover(self):
+        self.status = "discover"
+
     def retrieve_good_neighbors(self):
         neighbors = self.neighbor_list[:]
         for neighbor in self.neighbor_list:

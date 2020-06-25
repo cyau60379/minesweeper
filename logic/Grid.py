@@ -54,13 +54,17 @@ class Grid:
 
     def discover_squares(self, square):
         queue = [square]
+        deja_vu = set()
         while queue:
-            self.discover_square(queue)
+            self.discover_square(queue, deja_vu)
 
-    def discover_square(self, queue):
+    def discover_square(self, queue, deja_vu):
         square = queue.pop(0)
-        self.shown_grid[square.coords[0]][square.coords[1]] = square.mined_neighbors
-        queue += square.retrieve_good_neighbors()
+        if square not in deja_vu:
+            deja_vu.add(square)
+            self.shown_grid[square.coords[0]][square.coords[1]] = square.mined_neighbors
+            self.mine_grid[square.coords[0]][square.coords[1]].discover()
+            queue += square.retrieve_good_neighbors()
 
     def show_all_grid(self):
         for i in range(self.size):
@@ -69,3 +73,16 @@ class Grid:
                     self.shown_grid[i][j] = -2
                 else:
                     self.shown_grid[i][j] = self.mine_grid[i][j].mined_neighbors
+
+    def end_game(self):
+        new_grid = []
+        for i in range(self.size):
+            new_grid.append([])
+            for j in range(self.size):
+                if self.mine_grid[i][j].has_mine():
+                    new_grid[i].append(-1)
+                else:
+                    new_grid[i].append(self.mine_grid[i][j].mined_neighbors)
+        if new_grid == self.shown_grid:
+            return True
+        return False
