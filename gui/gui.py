@@ -45,17 +45,17 @@ class GUISquare(Canvas):
 class Minesweeper(Tk):
     def __init__(self):
         self.pref = load_preferences()
-        self.lvl = (8, 10)
+        self.lvl = int(self.pref["level"]["0"][0]), int(self.pref["level"]["0"][1])
+        self.size = int(self.pref["size"])
         self.active_page = self.start_page
         self.grid = Grid()
         self.frame_dict = dict()
         self.color, self.font_color, self.label_mode = self.load_color()
         super().__init__()
         self.var = StringVar()
-        self.geometry('750x750')
+        self.geometry(str(self.size) + 'x' + str(self.size))
         self.title("Minesweeper")
         self.configure(background=self.color)
-        self.size = 750
         self.maxsize(self.size, self.size)
         self.minsize(self.size, self.size)
         self.add_menubar()
