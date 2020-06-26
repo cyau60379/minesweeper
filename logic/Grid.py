@@ -7,6 +7,8 @@ class Grid:
         self.mine_grid = []
         self.shown_grid = []
         self.size = 0
+        self.mines = 0
+        self.flagged_square = 0
 
     def init_size(self, size, mines):
         try:
@@ -15,6 +17,7 @@ class Grid:
         except ValueError as e:
             raise e
         self.size = int_size
+        self.mines = int_mines
         for i in range(int_size):
             self.mine_grid.append([] * int_size)
             self.shown_grid.append([-1] * int_size)
@@ -61,11 +64,12 @@ class Grid:
 
     def discover_square(self, queue, deja_vu):
         square = queue.pop(0)
-        if square not in deja_vu or not square.is_discovered():
+        if square not in deja_vu or not square.is_discovered() or not square.is_flagged:
             deja_vu.add(square)
             self.shown_grid[square.coords[0]][square.coords[1]] = square.mined_neighbors
             self.mine_grid[square.coords[0]][square.coords[1]].discover()
-            queue += square.retrieve_good_neighbors()
+            if square.mined_neighbors == 0:
+                queue += square.retrieve_good_neighbors()
 
     def show_all_grid(self):
         for i in range(self.size):
@@ -74,6 +78,22 @@ class Grid:
                     self.shown_grid[i][j] = -2
                 else:
                     self.shown_grid[i][j] = self.mine_grid[i][j].mined_neighbors
+
+    def put_flag_on_square(self, square):
+        if self.flagged_square >= self.mines:
+            return False
+        else:
+            square.flag()
+            self.flagged_square += 1
+            return True
+
+    def remove_flag_on_square(self, square):
+        if self.flagged_square <= 0:
+            return False
+        else:
+            square.unflag()
+            self.flagged_square -= 1
+            return True
 
     def end_game(self):
         new_grid = []

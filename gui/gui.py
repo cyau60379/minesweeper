@@ -5,13 +5,13 @@ from logic.Grid import Grid
 
 
 def load_preferences():
-    with open('resources/preferences.json5') as json_data:
+    with open('gui/resources/preferences.json5') as json_data:
         preferences = json.load(json_data)
         return preferences
 
 
 def save_preferences(preferences):
-    with open('resources/preferences.json5', 'w') as json_data:
+    with open('gui/resources/preferences.json5', 'w') as json_data:
         json.dump(preferences, json_data)
 
 
@@ -42,7 +42,7 @@ class GUISquare(Canvas):
         self.configure(bg=self.color)
 
 
-class BarBarGUI(Tk):
+class Minesweeper(Tk):
     def __init__(self):
         self.pref = load_preferences()
         self.lvl = (8, 10)
@@ -52,11 +52,12 @@ class BarBarGUI(Tk):
         self.color, self.font_color, self.label_mode = self.load_color()
         super().__init__()
         self.var = StringVar()
-        self.geometry('600x600')
+        self.geometry('750x750')
         self.title("Minesweeper")
         self.configure(background=self.color)
-        self.maxsize(600, 600)
-        self.minsize(600, 600)
+        self.size = 750
+        self.maxsize(self.size, self.size)
+        self.minsize(self.size, self.size)
         self.add_menubar()
         self.start_page()
 
@@ -119,7 +120,7 @@ class BarBarGUI(Tk):
     def about(self):
         top = Toplevel(width=200, height=100)
         top.title("About")
-        label = Label(top, text="Minesweeper v1.0", padx=30, pady=10)
+        label = Label(top, text="Minesweeper v1.2", padx=30, pady=10)
         description = Label(top, text="Minesweeper game", padx=10, pady=10)
         author = Label(top, text="Author: Cyril AUBOURG", padx=30, pady=10)
         label.pack()
@@ -153,14 +154,39 @@ class BarBarGUI(Tk):
                                bg=self.color,
                                bd=3,
                                relief=GROOVE,
-                               width=int(600 / size),
-                               height=int(600 / size),
+                               width=int(self.size / size),
+                               height=int(self.size / size),
                                )
                 gs.bind("<Button-1>", lambda event, a=row, b=col: self.activate_square(a, b))
+                gs.bind("<Button-3>", lambda event, a=row, b=col: self.flag_square(a, b))
                 gs.grid(row=row, column=col)
-                self.grid_rowconfigure(row, minsize=int(600 / size), weight=1)
-                self.grid_columnconfigure(col, minsize=int(600 / size), weight=1)
+                self.grid_rowconfigure(row, minsize=int(self.size / size), weight=1)
+                self.grid_columnconfigure(col, minsize=int(self.size / size), weight=1)
                 self.frame_dict[(row, col)] = gs
+
+    def flag_square(self, row, col):
+        square = self.grid.mine_grid[row][col]
+        size = self.lvl[0]
+        if square.is_flagged:
+            result = self.grid.remove_flag_on_square(square)
+            if result:
+                self.set_unflagged_square(col, row)
+        else:
+            result = self.grid.put_flag_on_square(square)
+            if result:
+                self.set_flagged_square(col, row, size)
+
+    def set_flagged_square(self, c, r, size):
+        load = Image.open("gui/resources/flag.png")
+        image = load.resize((int(self.size / size), int(self.size / size)), Image.ANTIALIAS)
+        img = ImageTk.PhotoImage(image)
+        self.frame_dict[(r, c)].create_image(0, 0, image=img, anchor=NW, tags="image")
+        self.frame_dict[(r, c)].image = img
+        self.frame_dict[(r, c)].unbind("<Button-1>")
+
+    def set_unflagged_square(self, c, r):
+        self.frame_dict[(r, c)].delete("image")
+        self.frame_dict[(r, c)].bind("<Button-1>", lambda event, a=r, b=c: self.activate_square(a, b))
 
     def activate_square(self, row, col):
         square = self.grid.mine_grid[row][col]
@@ -181,21 +207,22 @@ class BarBarGUI(Tk):
 
     def set_discovered_square(self, c, r, size):
         if self.grid.mine_grid[r][c].has_mine():
-            load = Image.open("resources/mine.png")
+            load = Image.open("gui/resources/mine.png")
         else:
-            load = Image.open("resources/" + str(self.grid.mine_grid[r][c].mined_neighbors) + ".png")
-        image = load.resize((int(600 / size), int(600 / size)), Image.ANTIALIAS)
+            load = Image.open("gui/resources/" + str(self.grid.mine_grid[r][c].mined_neighbors) + ".png")
+        image = load.resize((int(self.size / size), int(self.size / size)), Image.ANTIALIAS)
         img = ImageTk.PhotoImage(image)
-        self.frame_dict[(r, c)].create_image(0, 0, image=img, anchor=NW)
+        self.frame_dict[(r, c)].create_image(0, 0, image=img, anchor=NW, tags="image")
         self.frame_dict[(r, c)].image = img
         self.frame_dict[(r, c)].unbind("<Button-1>")
+        self.frame_dict[(r, c)].unbind("<Button-3>")
 
     def start_page(self):
         self.refresh_pane()
         self.add_menubar()
         self.active_page = self.start_page
         zoom = 0.3
-        load = Image.open("resources/minesweeper.png")
+        load = Image.open("gui/resources/minesweeper.png")
         pixels_x, pixels_y = tuple([int(zoom * x) for x in load.size])
         image = load.resize((pixels_x, pixels_y), Image.ANTIALIAS)
         render = ImageTk.PhotoImage(image)
@@ -206,8 +233,3 @@ class BarBarGUI(Tk):
         enter_app.place(relx=0.5, rely=0.45, anchor=CENTER)
         img.place(relx=0.5, rely=0, anchor=N)
         quit_app.place(relx=0.5, rely=0.55, anchor=CENTER)
-
-
-if __name__ == "__main__":
-    app = BarBarGUI()
-    app.mainloop()

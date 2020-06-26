@@ -7,6 +7,7 @@ class Square:
         self.status = "empty"
         self.neighbor_list = []
         self.mined_neighbors = 0
+        self.is_flagged = False
 
     def add_mine(self):
         self.status = "mine"
@@ -22,10 +23,19 @@ class Square:
     def discover(self):
         self.status = "discover"
 
+    def flag(self):
+        self.is_flagged = True
+
+    def unflag(self):
+        self.is_flagged = False
+
     def retrieve_good_neighbors(self):
         neighbors = self.neighbor_list[:]
         for neighbor in self.neighbor_list:
-            if (neighbor not in neighbors) or (not neighbor.has_mine()):
+            if neighbor.is_flagged or neighbor.is_discovered():  # neighbor flagged or already discovered
+                neighbors.remove(neighbor)
+                continue
+            if (neighbor not in neighbors) or (not neighbor.has_mine()):  # neighbor already removed or no mine
                 continue
             if neighbor.has_mine():
                 neighbors.remove(neighbor)
